@@ -26,7 +26,7 @@ void StopI2C_Trans(){
 }
 
 void Write(unsigned char Slave_Address, unsigned char Data){
-    StartI2C_Trans((Slave_Address<<1)& 0xFE);
+    StartI2C_Trans(Slave_Address);
     trigger_action;
     wait_for_completion;
     TWDR = Data;
@@ -34,12 +34,12 @@ void Write(unsigned char Slave_Address, unsigned char Data){
     wait_for_completion;
 }
 
-void Read_from(unsigned char Slave_Address, unsigned char MEM_ADDRESS){ //slave address needs to be 7 bit, 8 bit mem address
+void Read_from(unsigned char Slave_Address, unsigned char MEM_ADDRESS){ //slave addresses need to be 8 bit
     Write(Slave_Address, MEM_ADDRESS);
         TWCR = ((1<<TWINT)|(1<<TWEN));
         wait_for_completion;
 
-    StartI2C_Trans((Slave_Address<<1)| 0x01); //start read
+    StartI2C_Trans(Slave_Address); //start read
         TWCR = ((1<<TWEA)|(1<<TWINT)|(1<<TWEN)); // sends ack 
         wait_for_completion; 
         trigger_action;
