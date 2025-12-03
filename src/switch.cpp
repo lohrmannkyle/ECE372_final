@@ -15,4 +15,11 @@ void initSwitchPin(){
     PORTB |= (1 << PORTB0);
     PCICR |= (1 << PCIE0);
     PCMSK0 |= (1 << PCINT0);
+
+    //Initializes pin 50 on the development board
+    //Pin50 is associated with PCINT3 as an interrupt
+    DDRB &= ~(1 << DDB3);
+    PORTB |= (1 << PORTB3);
+    PCICR |= (1 << PCIE0);
+    PCMSK0 |= (1 << PCINT3);
 }

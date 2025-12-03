@@ -11,6 +11,8 @@ Final project
 #include "I2C.h"
 #include "switch.h"
 #include "led.h"
+#include "ultrasonic.h"
+//#include "lcd.h"
 
 using namespace std;
 
@@ -20,9 +22,15 @@ typedef enum {wait_press, pressed, wait_release, released} debounce_state;
 //state machine for distance detection system
 typedef enum {green, yellow, red} color_state;
 
+//state machine for on/off (ultrasonic sensor)
+typedef enum {on, off} ultrasonic_bool; //what a sick fuckin name lmao
+
 volatile debounce_state switch_state = wait_press; //this switch is for preset offsets + debugging
 volatile debounce_state switch2_state = wait_press; //this switch is for manual offset
 volatile color_state distance_state = green; //this is a color system
+volatile ultrasonic_bool ultrasonic_state = off;
+
+bool last = false;
 
 int main(){
 
@@ -31,7 +39,9 @@ int main(){
   Serial.begin(9600);
   initSwitchPin();
   initled();
-  initTimer();
+  initultrasonic();
+  initTimer0();
+  initTimer1();
   initT3PWM();
   /*
   init_timer_1();
@@ -55,6 +65,8 @@ int main(){
     int switch_press_count = 0; 
     int curr_dist = 5;
 
+    //ultrasonic test
+    int distance_test = 0;
 while (1){
 
     //Read_from(0x10, 0x00); //read distance from lidar
@@ -166,8 +178,22 @@ while (1){
             setT3DutyCycle(100);
             break;
     }
-}
 
+    //Ultrasonic logic
+    switch(ultrasonic_state){
+        case off:
+            PORTB &= ~(1 << PORTB2);  //trigger needs to be off
+            PORTA &= ~(1 << PORTA5); //light led must be off
+            
+            break;
+        case on:
+            PORTA |= (1 << PORTA5); //light led must be on
+            distance_test = getDist();
+
+            Serial.println(distance_test);
+            break;
+    }
+}
 
     return 0;
 }
@@ -186,12 +212,23 @@ ISR(PCINT0_vect){
 
     //For button 2 (sets offset = current distance)
     if (!(PINB & (1 << PINB0))) {
-        if (switch_state == wait_press)
-            switch_state = pressed;
+        if (switch2_state == wait_press)
+            switch2_state = pressed;
     }
 
     else {
-        if (switch_state == wait_release)
-            switch_state = released;
+        if (switch2_state == wait_release)
+            switch2_state = released;
+    }
+    
+    //For button 3 (turns on/off entire system)
+    if (!(PINB & (1 << PINB3))) {
+        if (!last){
+            ultrasonic_state = (ultrasonic_state == off ? on : off);
+        }
+        last = true;
+    }
+    else{
+        last = false;
     }
 }
