@@ -7,24 +7,22 @@ Final project
 
 #include "timer.h"
 //#include "spi.h"
+#include "pwm.h"
 #include "I2C.h"
 #include "switch.h"
 #include "led.h"
-
-//#include "switch.h"
 
 using namespace std;
 
 //switch debounce statemachine
 typedef enum {wait_press, pressed, wait_release, released} debounce_state;
 
-
-
 //state machine for distance detection system
 typedef enum {green, yellow, red} color_state;
 
-volatile debounce_state switch_state = wait_press;
-volatile color_state distance_state = green;
+volatile debounce_state switch_state = wait_press; //this switch is for preset offsets + debugging
+volatile debounce_state switch2_state = wait_press; //this switch is for manual offset
+volatile color_state distance_state = green; //this is a color system
 
 int main(){
 
@@ -34,9 +32,9 @@ int main(){
   initSwitchPin();
   initled();
   initTimer();
+  initT3PWM();
   /*
   init_timer_1();
-  init_timer_3();
   init_switch();
   init_spi();
   init_matrix();
@@ -52,10 +50,11 @@ int main(){
     //delay_ms(1);
 
     //temporary offset, led, and tolerance testing
-    int min_tolerance = 2;
-    int max_tolerance = 5;
+    int min_tolerance = 2; //<- these are the offset defaults
+    int max_tolerance = 5; //<- these are the offset defaults
     int switch_press_count = 0; 
-    int distance = 5;
+    int curr_dist = 5;
+
 while (1){
 
     //Read_from(0x10, 0x00); //read distance from lidar
@@ -63,25 +62,14 @@ while (1){
     //x = Read_data();
     //Serial.println(x);
 
-    /**
-     * Let d denote current distance. Fix d > 0. 
-     * RED ZONE : 0 < d <= min_tolerance
-     * ex. 0 < d <= 2 feet
-     * YELLOW ZONE : min_tolerance < d <= max_tolerance
-     * ex. 2 feet < d <= 5 feet
-     * GREEN ZONE : d >= max_tolerance
-     * ex. d >= 5 feet
-     */
-    Serial.println(switch_state);
-    Serial.println(distance_state);
-    if ((distance <= min_tolerance) && (distance > 0)){
-            distance_state = red;
+    if ((curr_dist <= min_tolerance) && (curr_dist > 0)){
+            distance_state = red; //RED ZONE : 0 < curr_dist <= min_tolerance
     }
-    if ((distance > min_tolerance) && (distance < max_tolerance)){
-        distance_state = yellow;
+    if ((curr_dist > min_tolerance) && (curr_dist < max_tolerance)){
+        distance_state = yellow; //YELLOW ZONE : min_tolerance < d <= max_tolerance
     }
-    if ((distance >= max_tolerance)){
-        distance_state = green;
+    if ((curr_dist >= max_tolerance)){
+        distance_state = green; //GREEN ZONE : d >= max_tolerance
     }
     //test cases: 5, 3, 1
     switch(switch_state){
@@ -90,21 +78,39 @@ while (1){
         
         case pressed:
             timerDelay_ms(40);
-            switch_press_count++;
+            switch_press_count++; //cycling logic
             switch_state = wait_release;
-            switch(switch_press_count){
-                case 0: //this pertains to distance 5
-                    distance = 5;
+            switch(switch_press_count){  //currently tests led + distance system. manual offset system commented
+                case 0: 
+                    curr_dist= 5;
+
+                    //1 foot
+                    //min_tolerance = 1;
+                    //max_tolerance = 4;
+
                     break;
                 case 1:
-                    distance = 3;
+                    curr_dist = 3;
+
+                    //2 feet
+                    //min_tolerance = 2;
+                    //max_tolerance = 5;
+                    
                     break;
                 case 2:
-                    distance = 1;
+                    curr_dist = 1;
+
+                    //3 feet
+                    //min_tolerance = 3;
+                    //max_tolerance = 6;
                     break;
                 case 3:
                     switch_press_count = 0;
-                    distance = 5;
+                    curr_dist = 5;
+
+                    //4 feet
+                    //min_tolerance = 4;
+                    //max_tolerance = 7;
                     break;
             }
             
@@ -120,24 +126,44 @@ while (1){
 
     }
 
+    switch(switch2_state){ //this one simply just sets the current distance to offset_distance
+        case wait_press:
+            break;
+        
+        case pressed:
+            timerDelay_ms(40);
+            min_tolerance = curr_dist;
+            break;
+        
+        case wait_release:
+            break;
+
+        case released:
+            timerDelay_ms(40);
+            switch_state = wait_press;
+            break;
+
+    }
+
+    //led + buzzer state machine logic
     switch(distance_state){
         case green:
             PORTA |= (1 << PORTA2);
             PORTA &= ~(1 << PORTA1);
             PORTA &= ~(1 << PORTA3);
-           
+            setT3DutyCycle(0);
             break;
         case yellow:
             PORTA &= ~(1 << PORTA2);
             PORTA &= ~(1 << PORTA1);
             PORTA |= (1 << PORTA3);
-           
+            setT3DutyCycle(50);
             break;
         case red:
             PORTA &= ~(1 << PORTA2);
             PORTA |= (1 << PORTA1);
             PORTA &= ~(1 << PORTA3);
-  
+            setT3DutyCycle(100);
             break;
     }
 }
@@ -159,5 +185,13 @@ ISR(PCINT0_vect){
     }
 
     //For button 2 (sets offset = current distance)
-    
+    if (!(PINB & (1 << PINB0))) {
+        if (switch_state == wait_press)
+            switch_state = pressed;
+    }
+
+    else {
+        if (switch_state == wait_release)
+            switch_state = released;
+    }
 }
