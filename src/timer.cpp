@@ -59,7 +59,7 @@ void timerDelay_ms(unsigned int msDelay){
 }
 
 void timerDelay_us(unsigned int usDelay) {  
-    cli();  // disable interrupts during precise µs loop
+    //cli();  // disable interrupts during precise µs loop
 
     while (usDelay--) {
         TCNT1 = 65520;
@@ -68,6 +68,6 @@ void timerDelay_us(unsigned int usDelay) {
         while (!(TIFR1 & (1 << TOV1)));
     }
 
-    sei();  // re-enable interrupts
+    //sei();  // re-enable interrupts
 }
 

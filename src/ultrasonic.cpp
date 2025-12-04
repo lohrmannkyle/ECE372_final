@@ -1,10 +1,14 @@
 #include <ultrasonic.h>
 #include <avr/io.h>
 #include <timer.h>
+#include <Arduino.h>
+#include <util/delay.h>
 
 void initultrasonic(){
     DDRB |= (1 << DDB2); //trigger
     DDRL &= ~(1 << DDL0); //echo
+
+    PORTL |= (1 << PORTL0); //enable pull up
 }
 
 void pulsetrig(){
@@ -18,27 +22,41 @@ void pulsetrig(){
 }
 
 int getDist() {
+
+    // Disable interrupts during timing
+    uint8_t sreg = SREG;
+    cli();
+
+    // --- Trigger pulse ---
     pulsetrig();
 
-    // Wait for echo to go HIGH (start)
-    int timeout = 30000;
+    // --- Wait for echo to go HIGH ---
+    int waitTimeout = 30000;   // ~30ms
+
     while (!(PINL & (1 << PINL0))) {
-        if (--timeout == 0) return 0; // no echo
+        timerDelay_us(1);
+        
+        if (--waitTimeout == 0) {
+            SREG = sreg;
+            return -1;         // NO RISING EDGE
+        }
     }
 
-    // Now echo is HIGH → measure length
+    // --- Measure HIGH pulse duration ---
     int count = 0;
     while (PINL & (1 << PINL0)) {
         timerDelay_us(1);
         count++;
-        if (count > timeout) break;  // safety
+
+        if (count > 30000) {
+            break;             // safety limit
+        }
     }
 
-    // convert microseconds → cm
+    // Restore interrupts
+    SREG = sreg;
+
+    // Convert to centimeters
     int distance_cm = count / 58;
-
-    // convert cm → feet
-    float distance_ft = distance_cm / 30.48;
-
-    return (int)distance_ft;
+    return distance_cm;
 }

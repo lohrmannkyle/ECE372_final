@@ -188,6 +188,8 @@ while (1){
             break;
         case on:
             PORTA |= (1 << PORTA5); //light led must be on
+            //Serial.println("Do we enter this state?");
+    
             distance_test = getDist();
 
             Serial.println(distance_test);
