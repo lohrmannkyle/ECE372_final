@@ -22,40 +22,37 @@ void initTimer0(){
 
 }
 
-void initTimer1() {
-//Timer1
-    // normal mode
-    TCCR1A = 0;
-    TCCR1B = 0;
-
-    // prescalar = 1
-    TCCR1B |= (1 << CS10);
-    TCCR1B &= ~((1 << CS11) | (1 << CS12));
-
-    TCNT1 = 65520;
-
-    TIFR1 |= (1 << TOV1);
+void initTimer1(){
+    // set to CTC (0100)
+    TCCR1B |= (1 << WGM12);
+    TCCR1B &= ~((1 << WGM13));
+    TCCR1A &= ~((1 << WGM10) | (1 << WGM11));
 }
 
 
-void timerDelay_ms(unsigned int msDelay){
-    //reset timer to initial value
-        TCNT0 = 5;
-    //reset flag value
-        TIFR0 |= (1<<TOV0);
+void timerDelay_ms(int delay){
+    unsigned count = 0;
 
-    //Counter var to count number of timer delays
-        unsigned int counter = 0;
+    // set prescalar to 64 (011)
+    TCCR1B |= (1 << CS11) | (1 << CS10);
+    TCCR1B &= ~(1 << CS12);
 
-     //loop
-        while (counter < msDelay){
-            //Serial.print(counter);
-            if (TIFR0 & (1 << TOV0)){
-                //reset flag
-                TIFR0 |= (1 << TOV0);
-                counter++;
-            }
-        }  
+    // set top and start values
+    TCNT1 = 0;
+    OCR1A = 249;
+
+    // ensure flag is cleared to begin
+    TIFR1 = (1 << OCF1A);
+
+    while (count < delay){
+        while (!(TIFR1 & (1 <<OCF1A)));
+        count++;
+        TIFR1 = (1 << OCF1A);
+
+    }
+
+    // disable clock
+    TCCR1B &= ~((1 << CS12) | (1 << CS11) | (1 << CS10));
 }
 
 void timerDelay_us(unsigned int usDelay) {  
