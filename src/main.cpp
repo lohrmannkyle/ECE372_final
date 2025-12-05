@@ -43,6 +43,7 @@ int main(){
   initTimer0();
   initTimer1();
   initT3PWM();
+  initI2C();
   /*
   init_timer_1();
   init_switch();
@@ -52,12 +53,14 @@ int main(){
   set_smile();
   */
 
-// lidar slave address 0x10 > 0001000
-    //Write(0x10, 0x00); 
-    //Write(0x25, 0x00); //enable lidar//register 0x25 00100101
-    //Write(0x23, 0x00); // enable continuous ranging mode
-    //StopI2C_Trans();
-    //delay_ms(1);
+//Initalize LIDAR settings
+  write_i2c(0x25, 0x01);// enable Lidar sensor
+  timerDelay_ms(100);
+
+//Lidar Vars
+    uint8_t x_h;
+    uint8_t x_l;
+    uint16_t x;
 
     //temporary offset, led, and tolerance testing
     int min_tolerance = 2; //<- these are the offset defaults
@@ -69,10 +72,17 @@ int main(){
     int distance_test = 0;
 while (1){
 
-    //Read_from(0x10, 0x00); //read distance from lidar
-    //int8_t x;
-    //x = Read_data();
-    //Serial.println(x);
+    //Read LIDAR i2c
+    x_l = Read_I2C(0x00);
+    x_h = Read_I2C(0x01);
+    x = x_l + (x_h << 8);
+
+    //Serial.print("X_h:");
+    //Serial.println(x_h);
+    //Serial.print("X_l:");
+    //Serial.println(x_l);
+    Serial.print("X:");
+    Serial.println(x);
 
     if ((curr_dist <= min_tolerance) && (curr_dist > 0)){
             distance_state = red; //RED ZONE : 0 < curr_dist <= min_tolerance
