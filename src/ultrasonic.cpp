@@ -2,7 +2,6 @@
 #include <avr/io.h>
 #include <timer.h>
 #include <Arduino.h>
-#include <util/delay.h>
 
 void initultrasonic(){
     DDRB |= (1 << DDB2); //trigger
@@ -21,16 +20,14 @@ void pulsetrig(){
     PORTB &= ~(1 << PORTB2);
 }
 
-int getDist() {
+float getDist() {
 
     // Disable interrupts during timing
     uint8_t sreg = SREG;
     cli();
 
-    // --- Trigger pulse ---
     pulsetrig();
 
-    // --- Wait for echo to go HIGH ---
     int waitTimeout = 30000;   // ~30ms
 
     while (!(PINL & (1 << PINL0))) {
@@ -38,11 +35,10 @@ int getDist() {
         
         if (--waitTimeout == 0) {
             SREG = sreg;
-            return -1;         // NO RISING EDGE
+            break;         // NO RISING EDGE
         }
     }
 
-    // --- Measure HIGH pulse duration ---
     int count = 0;
     while (PINL & (1 << PINL0)) {
         timerDelay_us(1);
@@ -53,10 +49,13 @@ int getDist() {
         }
     }
 
-    // Restore interrupts
     SREG = sreg;
 
     // Convert to centimeters
-    int distance_cm = count / 58;
-    return distance_cm;
+    //count is in microseconds
+    int distance_cm = count / 58;// reurns in cm
+
+    float distance_in = distance_cm / 2.54;
+
+    return distance_in;
 }

@@ -3,7 +3,7 @@
 
 void initTimer0();
 void initTimer1();
-void timerDelay_ms(int);
+void timerDelay_ms(unsigned int);
 void timerDelay_us(unsigned int);
 
 #endif

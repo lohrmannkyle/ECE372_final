@@ -5,6 +5,6 @@ void initultrasonic();
 
 void pulsetrig();
 
-int getDist();
+float getDist();
 
 #endif

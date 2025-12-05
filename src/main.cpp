@@ -12,6 +12,7 @@ Final project
 #include "switch.h"
 #include "led.h"
 #include "ultrasonic.h"
+#include "lcd.h"
 //#include "lcd.h"
 
 using namespace std;
@@ -43,6 +44,7 @@ int main(){
   initTimer0();
   initTimer1();
   initT3PWM();
+  initLCDPins();
   /*
   init_timer_1();
   init_switch();
@@ -66,7 +68,7 @@ int main(){
     int curr_dist = 5;
 
     //ultrasonic test
-    int distance_test = 0;
+    float distance_test = 0;
 while (1){
 
     //Read_from(0x10, 0x00); //read distance from lidar
@@ -169,7 +171,7 @@ while (1){
             PORTA &= ~(1 << PORTA2);
             PORTA &= ~(1 << PORTA1);
             PORTA |= (1 << PORTA3);
-            setT3DutyCycle(50);
+            setT3DutyCycle(10);
             break;
         case red:
             PORTA &= ~(1 << PORTA2);
@@ -190,10 +192,15 @@ while (1){
             PORTA |= (1 << PORTA5); //light led must be on
             //Serial.println("Do we enter this state?");
     
-            distance_test = getDist();
-
-            Serial.println(distance_test);
+            distance_test = getDist(); //this is inches
+            int feet = distance_test / 12;
+            int inches = (int) distance_test % 12;
+            //Serial.println(distance_test);
+            if (feet != 0){
+                Serial.println(feet);
+            }
             break;
+
     }
 }
 
