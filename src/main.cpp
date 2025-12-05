@@ -45,6 +45,7 @@ int main(){
   initTimer1();
   initT3PWM();
   initLCDPins();
+  initI2C();
   /*
   init_timer_1();
   init_switch();
@@ -65,22 +66,22 @@ int main(){
     uint16_t converted_distance_in, converted_distance_ft, converted_distance_rem;
 
     //temporary offset, led, and tolerance testing
-    int min_tolerance = 2; //<- these are the offset defaults
-    int max_tolerance = 5; //<- these are the offset defaults
+    int min_tolerance = 24; //<- these are the offset defaults
+    int max_tolerance = 60; //<- these are the offset defaults
     int switch_press_count = 0; 
-    double curr_dist;
+    float curr_dist;
 
     //ultrasonic test
     float distance_test = 0;
 while (1){
-
+    timerDelay_ms(200);
     //Read LIDAR Distance
     x_l = Read_I2C(0x00);
     x_h = Read_I2C(0x01);
     x = x_l + (x_h << 8);
-    converted_distance_in = (x/2.54);
-    converted_distance_ft = converted_distance_in/12;
-    converted_distance_rem = converted_distance_in % 12;
+    curr_dist = (x/2.54);
+    //converted_distance_ft = converted_distance_in/12;
+    //converted_distance_rem = converted_distance_in % 12;
 
     //Serial.print("X_h:"); These are just for debugging if the value seems to be off
     //Serial.println(x_h);
@@ -88,13 +89,13 @@ while (1){
     //Serial.println(x_l);
     //Serial.print("X:");
     //Serial.println(x);
-    //Serial.print("Inches:");
-    //Serial.println(converted_distance_in);
-    Serial.print("Ft:");
-    Serial.print(converted_distance_ft);
-    Serial.print(" In:");
-    Serial.print(converted_distance_rem);
-    Serial.println("");
+    Serial.print("Inches:");
+    Serial.println(curr_dist);
+    //Serial.print("Ft:");
+    //Serial.print(converted_distance_ft);
+    //Serial.print(" In:");
+    //Serial.print(converted_distance_rem);
+    //Serial.println("");
 
     if ((curr_dist <= min_tolerance) && (curr_dist > 0)){
             distance_state = red; //RED ZONE : 0 < curr_dist <= min_tolerance
@@ -116,35 +117,35 @@ while (1){
             switch_state = wait_release;
             switch(switch_press_count){  //currently tests led + distance system. manual offset system commented
                 case 0: 
-                    curr_dist= 5;
+                    //curr_dist= 5;
 
                     //1 foot
-                    //min_tolerance = 1;
-                    //max_tolerance = 4;
+                    min_tolerance = 12;
+                    max_tolerance = 48;
 
                     break;
                 case 1:
-                    curr_dist = 3;
+                    //curr_dist = 3;
 
                     //2 feet
-                    //min_tolerance = 2;
-                    //max_tolerance = 5;
+                    min_tolerance = 24;
+                    max_tolerance = 60;
                     
                     break;
                 case 2:
-                    curr_dist = 1;
+                    //curr_dist = 1;
 
                     //3 feet
-                    //min_tolerance = 3;
-                    //max_tolerance = 6;
+                    min_tolerance = 36;
+                    max_tolerance = 72;
                     break;
                 case 3:
                     switch_press_count = 0;
-                    curr_dist = 5;
+                    //curr_dist = 5;
 
                     //4 feet
-                    //min_tolerance = 4;
-                    //max_tolerance = 7;
+                    min_tolerance = 48;
+                    max_tolerance = 84;
                     break;
             }
             
@@ -167,6 +168,8 @@ while (1){
         case pressed:
             timerDelay_ms(40);
             min_tolerance = curr_dist;
+            max_tolerance = min_tolerance * (1.2);
+            Serial.println(max_tolerance);
             break;
         
         case wait_release:
@@ -191,7 +194,7 @@ while (1){
             PORTA &= ~(1 << PORTA2);
             PORTA &= ~(1 << PORTA1);
             PORTA |= (1 << PORTA3);
-            setT3DutyCycle(10);
+            setT3DutyCycle(0);
             break;
         case red:
             PORTA &= ~(1 << PORTA2);
