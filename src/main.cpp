@@ -61,28 +61,39 @@ int main(){
     uint8_t x_h;
     uint8_t x_l;
     uint16_t x;
+    uint16_t converted_distance_in, converted_distance_ft, converted_distance_rem;
 
     //temporary offset, led, and tolerance testing
     int min_tolerance = 2; //<- these are the offset defaults
     int max_tolerance = 5; //<- these are the offset defaults
     int switch_press_count = 0; 
-    int curr_dist = 5;
+    double curr_dist;
 
     //ultrasonic test
     int distance_test = 0;
 while (1){
 
-    //Read LIDAR i2c
+    //Read LIDAR Distance
     x_l = Read_I2C(0x00);
     x_h = Read_I2C(0x01);
     x = x_l + (x_h << 8);
+    converted_distance_in = (x/2.54);
+    converted_distance_ft = converted_distance_in/12;
+    converted_distance_rem = converted_distance_in % 12;
 
-    //Serial.print("X_h:");
+    //Serial.print("X_h:"); These are just for debugging if the value seems to be off
     //Serial.println(x_h);
     //Serial.print("X_l:");
     //Serial.println(x_l);
-    Serial.print("X:");
-    Serial.println(x);
+    //Serial.print("X:");
+    //Serial.println(x);
+    //Serial.print("Inches:");
+    //Serial.println(converted_distance_in);
+    Serial.print("Ft:");
+    Serial.print(converted_distance_ft);
+    Serial.print(" In:");
+    Serial.print(converted_distance_rem);
+    Serial.println("");
 
     if ((curr_dist <= min_tolerance) && (curr_dist > 0)){
             distance_state = red; //RED ZONE : 0 < curr_dist <= min_tolerance
