@@ -91,6 +91,10 @@ while (1){
     //Serial.println(x);
     Serial.print("Inches:");
     Serial.println(curr_dist);
+    Serial.print("Min_Tolerance:");
+    Serial.println(min_tolerance);
+    Serial.print("Max_Tolerance:");
+    Serial.println(max_tolerance);
     //Serial.print("Ft:");
     //Serial.print(converted_distance_ft);
     //Serial.print(" In:");
@@ -113,12 +117,12 @@ while (1){
         
         case pressed:
             timerDelay_ms(40);
-            switch_press_count++; //cycling logic
             switch_state = wait_release;
             switch(switch_press_count){  //currently tests led + distance system. manual offset system commented
                 case 0: 
                     //curr_dist= 5;
-
+                    switch_press_count++;
+                    Serial.println("Case 0.");
                     //1 foot
                     min_tolerance = 12;
                     max_tolerance = 48;
@@ -126,7 +130,8 @@ while (1){
                     break;
                 case 1:
                     //curr_dist = 3;
-
+                    switch_press_count++;
+                    Serial.println("Case 1");
                     //2 feet
                     min_tolerance = 24;
                     max_tolerance = 60;
@@ -134,7 +139,8 @@ while (1){
                     break;
                 case 2:
                     //curr_dist = 1;
-
+                    switch_press_count++;
+                    Serial.println("Case 2");
                     //3 feet
                     min_tolerance = 36;
                     max_tolerance = 72;
@@ -142,7 +148,7 @@ while (1){
                 case 3:
                     switch_press_count = 0;
                     //curr_dist = 5;
-
+                    Serial.println("Case 3");
                     //4 feet
                     min_tolerance = 48;
                     max_tolerance = 84;
@@ -167,9 +173,6 @@ while (1){
         
         case pressed:
             timerDelay_ms(40);
-            min_tolerance = curr_dist;
-            max_tolerance = min_tolerance * (1.2);
-            Serial.println(max_tolerance);
             break;
         
         case wait_release:
@@ -177,6 +180,9 @@ while (1){
 
         case released:
             timerDelay_ms(40);
+            min_tolerance = curr_dist;
+            max_tolerance = min_tolerance * (1.2);
+            Serial.println(max_tolerance);
             switch_state = wait_press;
             break;
 
@@ -237,7 +243,7 @@ ISR(PCINT0_vect){
             switch_state = pressed;
     }
 
-    else {
+    else if((PINB & (1 << PINB1))){
         if (switch_state == wait_release)
             switch_state = released;
     }
@@ -248,10 +254,11 @@ ISR(PCINT0_vect){
             switch2_state = pressed;
     }
 
-    else {
+    else if((PINB & (1 << PINB0))){
         if (switch2_state == wait_release)
             switch2_state = released;
     }
+
     
     //For button 3 (turns on/off entire system)
     if (!(PINB & (1 << PINB3))) {
