@@ -44,7 +44,7 @@ int main(){
   initTimer0();
   initTimer1();
   initT3PWM();
-  initLCDPins();
+  initLCD();
   initI2C();
   /*
   init_timer_1();
@@ -70,6 +70,12 @@ int main(){
     int max_tolerance = 60; //<- these are the offset defaults
     int switch_press_count = 0; 
     float curr_dist;
+
+    //Write LCD Overlay
+    moveCursor(0,0);
+    writeString("Mn   in Mx   in");
+    moveCursor(1,0);
+    writeString("Current:     in");
 
     //ultrasonic test
     float distance_test = 0;
@@ -209,6 +215,20 @@ while (1){
             setT3DutyCycle(100);
             break;
     }
+
+    //Write distance to LCD
+    char min[3]; 
+    sprintf(min, "%d", min_tolerance);
+    moveCursor(0,2);
+    writeString(min);
+    char max[3]; 
+    sprintf(max, "%d", max_tolerance);
+    moveCursor(0,10);
+    writeString(max);
+    char current[3]; 
+    sprintf(current, "%d", curr_dist);
+    moveCursor(1,10);
+    writeString(current);
 
     //Ultrasonic logic
     switch(ultrasonic_state){
